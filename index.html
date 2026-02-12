@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artisan Bakeries | Nearby Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 2s infinite;
+        }
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-900 min-h-screen pb-20">
+
+    <div class="max-w-7xl mx-auto px-6 py-12 md:py-20">
+        <!-- Header -->
+        <header class="mb-16 text-center max-w-2xl mx-auto">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 tracking-tight">Artisan Bakeries</h1>
+            <p class="text-stone-500 font-medium mb-8">
+                Discover local bakes. Enable your location to see distances and find the nearest treats in Hyderabad.
+            </p>
+            
+            <div class="flex flex-col items-center gap-4">
+                <button id="locateBtn" class="relative inline-flex items-center gap-3 px-10 py-5 bg-[#A67C52] text-white rounded-full font-bold uppercase text-sm tracking-widest transition-all shadow-2xl hover:scale-105 hover:bg-[#8e6a46] active:scale-95">
+                    <span id="btnIcon">📍</span>
+                    <span id="btnText">Find Nearest Bakes</span>
+                </button>
+
+                <div id="statusInfo" class="hidden text-[10px] text-stone-400 font-mono uppercase tracking-widest bg-stone-100 px-3 py-1 rounded"></div>
+                
+                <div id="errorMsg" class="hidden items-center gap-2 text-red-500 text-xs font-bold bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+                    <span id="errorText"></span>
+                    <button onclick="simulateLocation()" class="underline ml-2">Use Mock Location (Hyderabad)</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Gallery Grid -->
+        <div id="bakeryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <footer class="mt-20 text-center border-t border-stone-200 pt-10">
+            <p class="text-[10px] text-stone-400 font-bold uppercase tracking-widest">
+                © 2024 Artisan Bakes Collective • Updated with N.N. Bakery
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const bakeryData = [
+            { 
+                id: "UBCL-007", 
+                name: "N.N. BAKERY", 
+                motto: "Bakery and Cake Shop", 
+                rating: 4.5, 
+                reviews: 42, 
+                location: "Kompally", 
+                coords: { lat: 17.5350, lng: 78.4840 }, 
+                hours: "9:00 AM - 10:00 PM", 
+                specialties: ["Cakes", "Fresh Puffs"], 
+                image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=500",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=N.N.+Bakery+Ruby+Block+Kompally"
+            },
+            { id: "UBCL-001", name: "Gilani's Fresh Bakes", motto: "Where tradition meets taste.", rating: 4.9, reviews: 124, location: "Secunderabad", coords: { lat: 17.4486, lng: 78.4908 }, hours: "6:00 AM - 9:00 PM", specialties: ["Cakes", "Bread"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
+            { id: "UBCL-002", name: "Virani Bakery Corner", motto: "Freshly baked daily delights.", rating: 4.7, reviews: 98, location: "Abids", coords: { lat: 17.3891, lng: 78.4731 }, hours: "7:00 AM - 8:30 PM", specialties: ["Cookies", "Tea"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
+            { id: "UBCL-003", name: "Lalani's Delights", motto: "Excellence in every layer.", rating: 4.8, reviews: 156, location: "Banjara Hills", coords: { lat: 17.4156, lng: 78.4347 }, hours: "8:00 AM - 10:00 PM", specialties: ["Premium Cakes"], image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
+            { id: "UBCL-004", name: "Khetani Bakers", motto: "Heritage flavors since 1995.", rating: 4.6, reviews: 87, location: "Kukatpally", coords: { lat: 17.4948, lng: 78.3996 }, hours: "5:30 AM - 9:30 PM", specialties: ["Sweets", "Traditional"], image: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
+            { id: "UBCL-005", name: "Modern Bake House", motto: "Innovation in baking tradition.", rating: 4.8, reviews: 112, location: "Himayatnagar", coords: { lat: 17.3992, lng: 78.4818 }, hours: "6:00 AM - 8:00 PM", specialties: ["Biscuits", "Rusk"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
+            { id: "UBCL-006", name: "A-One Bakers", motto: "Crafted with love, baked with care.", rating: 4.9, reviews: 134, location: "Secunderabad", coords: { lat: 17.4435, lng: 78.4883 }, hours: "7:00 AM - 9:00 PM", specialties: ["Cakes", "Savories"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "#" }
+        ];
+
+        let userCoords = null;
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+        }
+
+        function renderBakeries() {
+            const grid = document.getElementById('bakeryGrid');
+            let items = [...bakeryData];
+
+            if (userCoords) {
+                items.sort((a, b) => {
+                    const distA = getDistance(userCoords.lat, userCoords.lng, a.coords.lat, a.coords.lng);
+                    const distB = getDistance(userCoords.lat, userCoords.lng, b.coords.lat, b.coords.lng);
+                    return distA - distB;
+                });
+            }
+
+            grid.innerHTML = items.map(bakery => {
+                const distance = userCoords 
+                    ? getDistance(userCoords.lat, userCoords.lng, bakery.coords.lat, bakery.coords.lng).toFixed(1) 
+                    : null;
+                
+                return `
+                <div class="group rounded-[3rem] overflow-hidden flex flex-col h-full bg-white shadow-2xl transition-all duration-500 hover:-translate-y-2 border ${distance ? 'border-green-100 ring-2 ring-green-50' : 'border-stone-100'}">
+                    <div class="relative h-64 overflow-hidden">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="${bakery.image}">
+                        ${distance ? `
+                        <div class="absolute bottom-4 left-4 bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-xl animate-bounce-subtle">
+                            <span>↗</span> ${distance} km away
+                        </div>` : ''}
+                        <div class="absolute top-4 left-4 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-[11px] uppercase tracking-widest shadow-lg">Open Now</div>
+                    </div>
+                    <div class="p-8 flex flex-col flex-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex gap-1 items-center">
+                                <span class="text-yellow-400">★</span>
+                                <span class="font-bold">${bakery.rating}</span>
+                                <span class="text-xs text-stone-400">(${bakery.reviews})</span>
+                            </div>
+                            <span class="text-[9px] font-extrabold text-stone-300 tracking-widest">${bakery.id}</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-stone-900 mb-1">${bakery.name}</h3>
+                        <p class="text-[#A67C52] italic text-sm mb-6">"${bakery.motto}"</p>
+                        <div class="flex flex-col gap-2 mb-6 pb-6 border-b border-stone-100 text-sm font-bold">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-[9px] text-stone-400 uppercase tracking-tighter mb-1">Location</p>
+                                    <p class="text-[#A67C52]">📍 ${bakery.location}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] text-stone-400 uppercase tracking-tighter mb-1">Hours</p>
+                                    <p>🕒 ${bakery.hours}</p>
+                                </div>
+                            </div>
+                            ${bakery.id === 'UBCL-007' ? `
+                            <p class="text-[10px] text-stone-400 font-normal leading-tight">Ruby Block, Satyam Enclave, Kompally</p>
+                            ` : ''}
+                        </div>
+                        <div class="flex gap-2 mt-auto">
+                            <a href="${bakery.mapUrl}" target="_blank" class="flex-1 py-3 bg-stone-100 rounded-xl font-bold text-xs uppercase hover:bg-stone-200 text-center flex items-center justify-center">Directions</a>
+                            <button class="flex-1 py-3 bg-[#A67C52] text-white rounded-xl font-bold text-xs uppercase shadow-lg">WhatsApp</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function simulateLocation() {
+            userCoords = { lat: 17.3850, lng: 78.4867 }; // Central Hyderabad
+            updateStatusUI();
+            renderBakeries();
+        }
+
+        function updateStatusUI() {
+            const btn = document.getElementById('locateBtn');
+            const status = document.getElementById('statusInfo');
+            const error = document.getElementById('errorMsg');
+
+            if (userCoords) {
+                btn.classList.replace('bg-[#A67C52]', 'bg-green-600');
+                document.getElementById('btnText').innerText = "Sorted by Nearest";
+                document.getElementById('btnIcon').innerText = "✅";
+                status.innerText = `Lat: ${userCoords.lat.toFixed(4)} | Lng: ${userCoords.lng.toFixed(4)}`;
+                status.classList.remove('hidden');
+                error.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('locateBtn').addEventListener('click', () => {
+            const errorDiv = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+            errorDiv.classList.add('hidden');
+
+            if (!navigator.geolocation) {
+                errorText.innerText = "Geolocation not supported";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('btnText').innerText = "Locating...";
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    updateStatusUI();
+                    renderBakeries();
+                },
+                (err) => {
+                    document.getElementById('btnText').innerText = "Find Nearest Bakes";
+                    errorText.innerText = "Location permission denied.";
+                    errorDiv.classList.remove('hidden');
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        });
+
+        renderBakeries();
+    </script>
+</body>
+</html>
