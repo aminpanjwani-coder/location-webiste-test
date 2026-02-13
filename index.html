@@ -16,6 +16,18 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
         }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #A67C52;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-900 min-h-screen pb-20">
@@ -25,7 +37,7 @@
         <header class="mb-16 text-center max-w-2xl mx-auto">
             <h1 class="text-4xl md:text-6xl font-bold mb-4 tracking-tight">Artisan Bakeries</h1>
             <p class="text-stone-500 font-medium mb-8">
-                Discover local bakes. Enable your location to see distances and find the nearest treats in Hyderabad.
+                Discover local bakes. We'll automatically detect your location to show the nearest treats in Hyderabad.
             </p>
             
             <div class="flex flex-col items-center gap-4">
@@ -36,9 +48,12 @@
 
                 <div id="statusInfo" class="hidden text-[10px] text-stone-400 font-mono uppercase tracking-widest bg-stone-100 px-3 py-1 rounded"></div>
                 
-                <div id="errorMsg" class="hidden items-center gap-2 text-red-500 text-xs font-bold bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+                <div id="errorMsg" class="hidden flex-col items-center gap-2 text-amber-600 text-xs font-bold bg-amber-50 px-4 py-3 rounded-lg border border-amber-100">
                     <span id="errorText"></span>
-                    <button onclick="simulateLocation()" class="underline ml-2">Use Mock Location (Hyderabad)</button>
+                </div>
+
+                <div id="infoMsg" class="hidden text-xs text-blue-600 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+                    <span id="infoText"></span>
                 </div>
             </div>
         </header>
@@ -70,15 +85,16 @@
                 image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=500",
                 mapUrl: "https://www.google.com/maps/search/?api=1&query=N.N.+Bakery+Ruby+Block+Kompally"
             },
-            { id: "UBCL-001", name: "Gilani's Fresh Bakes", motto: "Where tradition meets taste.", rating: 4.9, reviews: 124, location: "Secunderabad", coords: { lat: 17.4486, lng: 78.4908 }, hours: "6:00 AM - 9:00 PM", specialties: ["Cakes", "Bread"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
-            { id: "UBCL-002", name: "Virani Bakery Corner", motto: "Freshly baked daily delights.", rating: 4.7, reviews: 98, location: "Abids", coords: { lat: 17.3891, lng: 78.4731 }, hours: "7:00 AM - 8:30 PM", specialties: ["Cookies", "Tea"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
-            { id: "UBCL-003", name: "Lalani's Delights", motto: "Excellence in every layer.", rating: 4.8, reviews: 156, location: "Banjara Hills", coords: { lat: 17.4156, lng: 78.4347 }, hours: "8:00 AM - 10:00 PM", specialties: ["Premium Cakes"], image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
-            { id: "UBCL-004", name: "Khetani Bakers", motto: "Heritage flavors since 1995.", rating: 4.6, reviews: 87, location: "Kukatpally", coords: { lat: 17.4948, lng: 78.3996 }, hours: "5:30 AM - 9:30 PM", specialties: ["Sweets", "Traditional"], image: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
-            { id: "UBCL-005", name: "Modern Bake House", motto: "Innovation in baking tradition.", rating: 4.8, reviews: 112, location: "Himayatnagar", coords: { lat: 17.3992, lng: 78.4818 }, hours: "6:00 AM - 8:00 PM", specialties: ["Biscuits", "Rusk"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "#" },
-            { id: "UBCL-006", name: "A-One Bakers", motto: "Crafted with love, baked with care.", rating: 4.9, reviews: 134, location: "Secunderabad", coords: { lat: 17.4435, lng: 78.4883 }, hours: "7:00 AM - 9:00 PM", specialties: ["Cakes", "Savories"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "#" }
+            { id: "UBCL-001", name: "Gilani's Fresh Bakes", motto: "Where tradition meets taste.", rating: 4.9, reviews: 124, location: "Secunderabad", coords: { lat: 17.4486, lng: 78.4908 }, hours: "6:00 AM - 9:00 PM", specialties: ["Cakes", "Bread"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=Gilani+Bakery+Secunderabad" },
+            { id: "UBCL-002", name: "Virani Bakery Corner", motto: "Freshly baked daily delights.", rating: 4.7, reviews: 98, location: "Abids", coords: { lat: 17.3891, lng: 78.4731 }, hours: "7:00 AM - 8:30 PM", specialties: ["Cookies", "Tea"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=Bakery+Abids+Hyderabad" },
+            { id: "UBCL-003", name: "Lalani's Delights", motto: "Excellence in every layer.", rating: 4.8, reviews: 156, location: "Banjara Hills", coords: { lat: 17.4156, lng: 78.4347 }, hours: "8:00 AM - 10:00 PM", specialties: ["Premium Cakes"], image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=Bakery+Banjara+Hills+Hyderabad" },
+            { id: "UBCL-004", name: "Khetani Bakers", motto: "Heritage flavors since 1995.", rating: 4.6, reviews: 87, location: "Kukatpally", coords: { lat: 17.4948, lng: 78.3996 }, hours: "5:30 AM - 9:30 PM", specialties: ["Sweets", "Traditional"], image: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=Khetani+Bakery+Kukatpally" },
+            { id: "UBCL-005", name: "Modern Bake House", motto: "Innovation in baking tradition.", rating: 4.8, reviews: 112, location: "Himayatnagar", coords: { lat: 17.3992, lng: 78.4818 }, hours: "6:00 AM - 8:00 PM", specialties: ["Biscuits", "Rusk"], image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=Modern+Bakery+Himayatnagar" },
+            { id: "UBCL-006", name: "A-One Bakers", motto: "Crafted with love, baked with care.", rating: 4.9, reviews: 134, location: "Secunderabad", coords: { lat: 17.4435, lng: 78.4883 }, hours: "7:00 AM - 9:00 PM", specialties: ["Cakes", "Savories"], image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500", mapUrl: "https://www.google.com/maps/search/?api=1&query=A+One+Bakery+Secunderabad" }
         ];
 
         let userCoords = null;
+        let locationSource = null; // 'gps', 'ip', or 'manual'
 
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -108,7 +124,7 @@
                 return `
                 <div class="group rounded-[3rem] overflow-hidden flex flex-col h-full bg-white shadow-2xl transition-all duration-500 hover:-translate-y-2 border ${distance ? 'border-green-100 ring-2 ring-green-50' : 'border-stone-100'}">
                     <div class="relative h-64 overflow-hidden">
-                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="${bakery.image}">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="${bakery.image}" alt="${bakery.name}">
                         ${distance ? `
                         <div class="absolute bottom-4 left-4 bg-green-600 text-white px-4 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-xl animate-bounce-subtle">
                             <span>↗</span> ${distance} km away
@@ -142,63 +158,153 @@
                             ` : ''}
                         </div>
                         <div class="flex gap-2 mt-auto">
-                            <a href="${bakery.mapUrl}" target="_blank" class="flex-1 py-3 bg-stone-100 rounded-xl font-bold text-xs uppercase hover:bg-stone-200 text-center flex items-center justify-center">Directions</a>
-                            <button class="flex-1 py-3 bg-[#A67C52] text-white rounded-xl font-bold text-xs uppercase shadow-lg">WhatsApp</button>
+                            <a href="${bakery.mapUrl}" target="_blank" class="flex-1 py-3 bg-stone-100 rounded-xl font-bold text-xs uppercase hover:bg-stone-200 text-center flex items-center justify-center transition-colors">Directions</a>
+                            <button class="flex-1 py-3 bg-[#A67C52] text-white rounded-xl font-bold text-xs uppercase shadow-lg hover:bg-[#8e6a46] transition-colors">WhatsApp</button>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function simulateLocation() {
-            userCoords = { lat: 17.3850, lng: 78.4867 }; // Central Hyderabad
-            updateStatusUI();
-            renderBakeries();
-        }
-
-        function updateStatusUI() {
+        function updateStatusUI(message, source) {
             const btn = document.getElementById('locateBtn');
             const status = document.getElementById('statusInfo');
             const error = document.getElementById('errorMsg');
+            const info = document.getElementById('infoMsg');
+            const infoText = document.getElementById('infoText');
 
             if (userCoords) {
-                btn.classList.replace('bg-[#A67C52]', 'bg-green-600');
+                btn.classList.remove('bg-[#A67C52]', 'hover:bg-[#8e6a46]');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
                 document.getElementById('btnText').innerText = "Sorted by Nearest";
                 document.getElementById('btnIcon').innerText = "✅";
-                status.innerText = `Lat: ${userCoords.lat.toFixed(4)} | Lng: ${userCoords.lng.toFixed(4)}`;
+                
+                let sourceText = '';
+                if (source === 'gps') sourceText = 'GPS';
+                else if (source === 'ip') sourceText = 'IP Location';
+                else if (source === 'manual') sourceText = 'Manual';
+                
+                status.innerText = `${sourceText} • Lat: ${userCoords.lat.toFixed(4)} | Lng: ${userCoords.lng.toFixed(4)}`;
                 status.classList.remove('hidden');
                 error.classList.add('hidden');
+                
+                if (source === 'ip') {
+                    infoText.innerText = "Using approximate location based on your IP address";
+                    info.classList.remove('hidden');
+                } else {
+                    info.classList.add('hidden');
+                }
             }
         }
 
-        document.getElementById('locateBtn').addEventListener('click', () => {
+        async function getLocationFromIP() {
+            try {
+                // Using ipapi.co for IP-based geolocation
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                
+                if (data.latitude && data.longitude) {
+                    // Check if user is roughly in Hyderabad area (within ~50km)
+                    const hydCenter = { lat: 17.3850, lng: 78.4867 };
+                    const distance = getDistance(data.latitude, data.longitude, hydCenter.lat, hydCenter.lng);
+                    
+                    if (distance < 50) {
+                        return { lat: data.latitude, lng: data.longitude };
+                    } else {
+                        // If user is far from Hyderabad, use Hyderabad center
+                        console.log('User appears to be outside Hyderabad, using city center');
+                        return hydCenter;
+                    }
+                }
+            } catch (err) {
+                console.error('IP geolocation failed:', err);
+            }
+            return null;
+        }
+
+        async function attemptLocationDetection() {
+            const btn = document.getElementById('locateBtn');
             const errorDiv = document.getElementById('errorMsg');
             const errorText = document.getElementById('errorText');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            
             errorDiv.classList.add('hidden');
+            btnText.innerText = "Locating...";
+            btnIcon.innerHTML = '<div class="spinner"></div>';
 
-            if (!navigator.geolocation) {
-                errorText.innerText = "Geolocation not supported";
-                errorDiv.classList.remove('hidden');
+            // Method 1: Try HTML5 Geolocation API first
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(
+                            resolve,
+                            reject,
+                            { 
+                                enableHighAccuracy: true, 
+                                timeout: 8000,
+                                maximumAge: 0 
+                            }
+                        );
+                    });
+                    
+                    userCoords = { 
+                        lat: position.coords.latitude, 
+                        lng: position.coords.longitude 
+                    };
+                    locationSource = 'gps';
+                    updateStatusUI('Location detected via GPS', 'gps');
+                    renderBakeries();
+                    return;
+                } catch (geoError) {
+                    console.log('GPS location failed:', geoError.message);
+                    
+                    // Show user-friendly error message based on error type
+                    if (geoError.code === 1) { // PERMISSION_DENIED
+                        errorText.innerText = "Location permission denied. Trying alternate method...";
+                    } else if (geoError.code === 2) { // POSITION_UNAVAILABLE
+                        errorText.innerText = "Location unavailable. Trying alternate method...";
+                    } else if (geoError.code === 3) { // TIMEOUT
+                        errorText.innerText = "Location timeout. Trying alternate method...";
+                    }
+                    errorDiv.classList.remove('hidden');
+                }
+            }
+
+            // Method 2: Fall back to IP-based location
+            btnText.innerText = "Getting location...";
+            const ipCoords = await getLocationFromIP();
+            
+            if (ipCoords) {
+                userCoords = ipCoords;
+                locationSource = 'ip';
+                updateStatusUI('Location detected via IP', 'ip');
+                renderBakeries();
                 return;
             }
 
-            document.getElementById('btnText').innerText = "Locating...";
+            // Method 3: Final fallback to Hyderabad center
+            userCoords = { lat: 17.3850, lng: 78.4867 };
+            locationSource = 'manual';
+            errorText.innerText = "Using Hyderabad city center as default location";
+            errorDiv.classList.remove('hidden');
+            updateStatusUI('Using default location', 'manual');
+            btnText.innerText = "Find Nearest Bakes";
+            btnIcon.innerText = "📍";
+            renderBakeries();
+        }
 
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    updateStatusUI();
-                    renderBakeries();
-                },
-                (err) => {
-                    document.getElementById('btnText').innerText = "Find Nearest Bakes";
-                    errorText.innerText = "Location permission denied.";
-                    errorDiv.classList.remove('hidden');
-                },
-                { enableHighAccuracy: true, timeout: 5000 }
-            );
+        // Auto-detect location on page load
+        window.addEventListener('load', () => {
+            attemptLocationDetection();
         });
 
+        // Manual location button
+        document.getElementById('locateBtn').addEventListener('click', () => {
+            attemptLocationDetection();
+        });
+
+        // Initial render without location
         renderBakeries();
     </script>
 </body>
