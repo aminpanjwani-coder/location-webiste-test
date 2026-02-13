@@ -6,6 +6,8 @@
     <title>Artisan Bakeries | Nearby Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
@@ -27,6 +29,44 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .leaflet-popup-content {
+            margin: 0;
+            min-width: 200px;
+        }
+        .custom-marker {
+            background: #A67C52;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .custom-marker:hover {
+            transform: scale(1.15);
+        }
+        .user-marker {
+            background: #10b981;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.9); }
         }
     </style>
 </head>
@@ -55,8 +95,25 @@
                 <div id="infoMsg" class="hidden text-xs text-blue-600 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
                     <span id="infoText"></span>
                 </div>
+
+                <!-- View Toggle -->
+                <div class="flex gap-2 mt-6">
+                    <button id="gridViewBtn" class="px-6 py-2 bg-[#A67C52] text-white rounded-full font-bold text-xs uppercase tracking-wider transition-all shadow-lg">
+                        📋 Grid View
+                    </button>
+                    <button id="mapViewBtn" class="px-6 py-2 bg-stone-200 text-stone-600 rounded-full font-bold text-xs uppercase tracking-wider transition-all hover:bg-stone-300">
+                        🗺️ Map View
+                    </button>
+                </div>
             </div>
         </header>
+
+        <!-- Map Container (hidden by default) -->
+        <div id="mapContainer" class="hidden mb-12">
+            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200">
+                <div id="map" class="w-full h-[600px]"></div>
+            </div>
+        </div>
 
         <!-- Gallery Grid -->
         <div id="bakeryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
@@ -71,6 +128,9 @@
     </div>
 
     <script>
+        let map = null;
+        let markers = [];
+        let userMarker = null;
         const bakeryData = [
             { 
                 id: "UBCL-007", 
@@ -95,6 +155,90 @@
 
         let userCoords = null;
         let locationSource = null; // 'gps', 'ip', or 'manual'
+
+        function initMap() {
+            if (map) return; // Already initialized
+            
+            // Center on Hyderabad
+            const center = userCoords || { lat: 17.3850, lng: 78.4867 };
+            
+            map = L.map('map').setView([center.lat, center.lng], 12);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            updateMapMarkers();
+        }
+
+        function updateMapMarkers() {
+            if (!map) return;
+            
+            // Clear existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
+            
+            // Add user location marker if available
+            if (userCoords && userMarker) {
+                userMarker.remove();
+            }
+            if (userCoords) {
+                const userIcon = L.divIcon({
+                    className: 'user-marker',
+                    html: '',
+                    iconSize: [20, 20]
+                });
+                userMarker = L.marker([userCoords.lat, userCoords.lng], { icon: userIcon })
+                    .addTo(map)
+                    .bindPopup('<div class="p-2 font-bold text-center">📍 Your Location</div>');
+            }
+            
+            // Add bakery markers
+            bakeryData.forEach(bakery => {
+                const distance = userCoords 
+                    ? getDistance(userCoords.lat, userCoords.lng, bakery.coords.lat, bakery.coords.lng).toFixed(1)
+                    : null;
+                
+                const bakeryIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: '🥖',
+                    iconSize: [40, 40]
+                });
+                
+                const popupContent = `
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">${bakery.name}</h3>
+                        <p class="text-sm text-stone-600 italic mb-2">"${bakery.motto}"</p>
+                        <div class="flex items-center gap-1 mb-2">
+                            <span class="text-yellow-400">★</span>
+                            <span class="font-bold">${bakery.rating}</span>
+                            <span class="text-xs text-stone-400">(${bakery.reviews})</span>
+                        </div>
+                        ${distance ? `<p class="text-sm text-green-600 font-bold mb-2">↗ ${distance} km away</p>` : ''}
+                        <p class="text-sm mb-1">📍 ${bakery.location}</p>
+                        <p class="text-sm mb-3">🕒 ${bakery.hours}</p>
+                        <a href="${bakery.mapUrl}" target="_blank" class="inline-block px-4 py-2 bg-[#A67C52] text-white rounded-lg text-xs font-bold hover:bg-[#8e6a46] transition-colors">
+                            Get Directions
+                        </a>
+                    </div>
+                `;
+                
+                const marker = L.marker([bakery.coords.lat, bakery.coords.lng], { icon: bakeryIcon })
+                    .addTo(map)
+                    .bindPopup(popupContent, { maxWidth: 300 });
+                
+                markers.push(marker);
+            });
+            
+            // Fit bounds to show all markers
+            if (markers.length > 0) {
+                const group = L.featureGroup(markers);
+                if (userMarker) group.addLayer(userMarker);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
 
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -164,6 +308,11 @@
                     </div>
                 </div>`;
             }).join('');
+            
+            // Update map markers if map is visible
+            if (map) {
+                updateMapMarkers();
+            }
         }
 
         function updateStatusUI(message, source) {
@@ -322,6 +471,37 @@
         // Auto-detect location on page load
         window.addEventListener('load', () => {
             attemptLocationDetection();
+        });
+
+        // View toggle functionality
+        document.getElementById('gridViewBtn').addEventListener('click', () => {
+            document.getElementById('bakeryGrid').classList.remove('hidden');
+            document.getElementById('mapContainer').classList.add('hidden');
+            
+            // Update button styles
+            document.getElementById('gridViewBtn').classList.remove('bg-stone-200', 'text-stone-600');
+            document.getElementById('gridViewBtn').classList.add('bg-[#A67C52]', 'text-white');
+            document.getElementById('mapViewBtn').classList.remove('bg-[#A67C52]', 'text-white');
+            document.getElementById('mapViewBtn').classList.add('bg-stone-200', 'text-stone-600');
+        });
+
+        document.getElementById('mapViewBtn').addEventListener('click', () => {
+            document.getElementById('bakeryGrid').classList.add('hidden');
+            document.getElementById('mapContainer').classList.remove('hidden');
+            
+            // Update button styles
+            document.getElementById('mapViewBtn').classList.remove('bg-stone-200', 'text-stone-600');
+            document.getElementById('mapViewBtn').classList.add('bg-[#A67C52]', 'text-white');
+            document.getElementById('gridViewBtn').classList.remove('bg-[#A67C52]', 'text-white');
+            document.getElementById('gridViewBtn').classList.add('bg-stone-200', 'text-stone-600');
+            
+            // Initialize and update map
+            if (!map) {
+                initMap();
+            } else {
+                updateMapMarkers();
+                map.invalidateSize(); // Fix map rendering after being hidden
+            }
         });
 
         // Manual location button
